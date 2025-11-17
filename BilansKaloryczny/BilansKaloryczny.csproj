@@ -8,4 +8,12 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <Folder Include="docs\" />
+    <Folder Include="Services\Domain\" />
+    <Folder Include="Services\DTOs\" />
+    <Folder Include="Services\Filters\" />
+    <Folder Include="Services\Interface\" />
+  </ItemGroup>
+
 </Project>
