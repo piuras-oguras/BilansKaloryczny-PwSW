@@ -1,12 +1,131 @@
 ﻿<Window x:Class="BilansKaloryczny.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:BilansKaloryczny"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="Bilans Kaloryczny"
+        Height="520"
+        Width="980"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
+        <!-- Góra: użytkownik + data -->
+        <Border Padding="10" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel>
+                    <TextBlock FontSize="18"
+                               FontWeight="SemiBold"
+                               Text="{Binding CurrentUser.FirstName, StringFormat='Witaj, {0}!'}" />
+
+                    <TextBlock Opacity="0.75"
+                               Text="{Binding SelectedDay.Date, StringFormat='Data: {0:yyyy-MM-dd}'}" />
+                </StackPanel>
+
+                <StackPanel Grid.Column="1"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <TextBlock Margin="0,0,12,0"
+                               Opacity="0.75"
+                               Text="{Binding CurrentUser.DailyCaloriesGoal, StringFormat='Cel: {0} kcal'}" />
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- Środek: 2 tabelki -->
+        <Grid Grid.Row="1" Margin="0,12,0,12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Posiłki -->
+            <DockPanel>
+                <TextBlock DockPanel.Dock="Top"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Text="Posiłki"
+                           Margin="0,0,0,8"/>
+
+                <DataGrid ItemsSource="{Binding Meals}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="Kategoria" Binding="{Binding Category}" Width="140"/>
+                        <DataGridTextColumn Header="Kcal" Binding="{Binding TotalCalories}" Width="80"/>
+                        <DataGridTextColumn Header="B" Binding="{Binding TotalProtein}" Width="70"/>
+                        <DataGridTextColumn Header="T" Binding="{Binding TotalFat}" Width="70"/>
+                        <DataGridTextColumn Header="W" Binding="{Binding TotalCarbs}" Width="70"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Button Margin="0,8,0,0"
+                        Height="34"
+                        Command="{Binding AddMealCommand}"
+                        Content="Dodaj przykładowy posiłek"/>
+            </DockPanel>
+
+            <!-- Aktywności -->
+            <DockPanel Grid.Column="2">
+                <TextBlock DockPanel.Dock="Top"
+                           FontSize="16"
+                           FontWeight="SemiBold"
+                           Text="Aktywności"
+                           Margin="0,0,0,8"/>
+
+                <DataGrid ItemsSource="{Binding Activities}"
+                          AutoGenerateColumns="False"
+                          CanUserAddRows="False">
+                    <DataGrid.Columns>
+                        <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>
+                        <DataGridTextColumn Header="Czas (min)" Binding="{Binding DurationMin}" Width="90"/>
+                        <DataGridTextColumn Header="Spalone" Binding="{Binding BurnedCalories}" Width="90"/>
+                        <DataGridTextColumn Header="Intens." Binding="{Binding Intensity}" Width="100"/>
+                    </DataGrid.Columns>
+                </DataGrid>
+
+                <Button Margin="0,8,0,0"
+                        Height="34"
+                        Command="{Binding AddActivityCommand}"
+                        Content="Dodaj przykładową aktywność"/>
+            </DockPanel>
+        </Grid>
+
+        <!-- Dół: podsumowanie -->
+        <Border Grid.Row="2"
+                Padding="10"
+                CornerRadius="8"
+                BorderBrush="#DDD"
+                BorderThickness="1">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           FontSize="14"
+                           Text="{Binding CaloriesConsumed, StringFormat='Zjedzone: {0} kcal'}" />
+
+                <TextBlock Grid.Column="1"
+                           FontSize="14"
+                           Text="{Binding CaloriesBurned, StringFormat='Spalone: {0} kcal'}" />
+
+                <TextBlock Grid.Column="2"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           Text="{Binding NetBalance, StringFormat='Bilans: {0} kcal'}" />
+            </Grid>
+        </Border>
     </Grid>
 </Window>
