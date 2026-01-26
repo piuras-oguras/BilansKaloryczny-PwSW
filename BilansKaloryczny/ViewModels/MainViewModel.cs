@@ -13,18 +13,24 @@ public class MainViewModel : BaseViewModel
 {
     public User CurrentUser { get; set; }
 
-    // Listy do ComboBoxów w edycji (RowDetails)
+    // ComboBox-y
     public ObservableCollection<ActivityIntensity> Intensities { get; } =
         new(Enum.GetValues(typeof(ActivityIntensity)).Cast<ActivityIntensity>());
 
     public ObservableCollection<MealCategory> MealCategories { get; } =
         new(Enum.GetValues(typeof(MealCategory)).Cast<MealCategory>());
 
-    // Dane "Ÿród³owe" (wszystkie rekordy)
+    public ObservableCollection<Gender> Genders { get; } =
+        new(Enum.GetValues(typeof(Gender)).Cast<Gender>());
+
+    public ObservableCollection<ActivityLevel> ActivityLevels { get; } =
+        new(Enum.GetValues(typeof(ActivityLevel)).Cast<ActivityLevel>());
+
+    // Dane Ÿród³owe (wszystkie rekordy)
     public ObservableCollection<Meal> Meals { get; } = new();
     public ObservableCollection<PhysicalActivity> Activities { get; } = new();
 
-    // Widoki filtrowane po dacie (pod to bindujesz DataGrid)
+    // Widoki filtrowane po dacie (pod DataGrid)
     public ICollectionView MealsView { get; }
     public ICollectionView ActivitiesView { get; }
 
@@ -43,6 +49,7 @@ public class MainViewModel : BaseViewModel
 
             ApplyDateFilter();
             RefreshComputed();
+            RefreshStatistics();
         }
     }
 
@@ -71,20 +78,117 @@ public class MainViewModel : BaseViewModel
         set { _selectedActivity = value; OnPropertyChanged(); }
     }
 
-    // Pola liczone – liczymy tylko z widoków (czyli z wybranego dnia)
+    // Liczniki liczone z widoków (czyli z wybranego dnia)
     public int CaloriesConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalCalories);
     public int CaloriesBurned => ActivitiesView.Cast<PhysicalActivity>().Sum(a => a.BurnedCalories);
     public int NetBalance => CaloriesConsumed - CaloriesBurned;
-
     public int CaloriesRemainingToGoal => Math.Max(0, CurrentUser.DailyCaloriesGoal - CaloriesConsumed);
 
     public string GoalProgressText
         => $"{CaloriesConsumed} / {CurrentUser.DailyCaloriesGoal} kcal ({(CurrentUser.DailyCaloriesGoal == 0 ? 0 : (int)Math.Round(100.0 * CaloriesConsumed / CurrentUser.DailyCaloriesGoal))}%)";
 
+    // Komendy
     public RelayCommand AddMealCommand { get; }
     public RelayCommand AddActivityCommand { get; }
     public RelayCommand DeleteMealCommand { get; }
     public RelayCommand DeleteActivityCommand { get; }
+
+    public RelayCommand ApplySettingsCommand { get; }
+    public RelayCommand ResetSettingsCommand { get; }
+
+    // ===== USTAWIENIA (pola edycyjne) =====
+    private string _settingsFirstName = "";
+    public string SettingsFirstName
+    {
+        get => _settingsFirstName;
+        set { _settingsFirstName = value; OnPropertyChanged(); }
+    }
+
+    private int _settingsAge;
+    public int SettingsAge
+    {
+        get => _settingsAge;
+        set { _settingsAge = value; OnPropertyChanged(); }
+    }
+
+    private int _settingsHeightCm;
+    public int SettingsHeightCm
+    {
+        get => _settingsHeightCm;
+        set { _settingsHeightCm = value; OnPropertyChanged(); }
+    }
+
+    private double _settingsWeightKg;
+    public double SettingsWeightKg
+    {
+        get => _settingsWeightKg;
+        set { _settingsWeightKg = value; OnPropertyChanged(); }
+    }
+
+    private Gender _settingsGender;
+    public Gender SettingsGender
+    {
+        get => _settingsGender;
+        set { _settingsGender = value; OnPropertyChanged(); }
+    }
+
+    private ActivityLevel _settingsActivityLevel;
+    public ActivityLevel SettingsActivityLevel
+    {
+        get => _settingsActivityLevel;
+        set { _settingsActivityLevel = value; OnPropertyChanged(); }
+    }
+
+    private int _settingsDailyGoal;
+    public int SettingsDailyCaloriesGoal
+    {
+        get => _settingsDailyGoal;
+        set { _settingsDailyGoal = value; OnPropertyChanged(); }
+    }
+
+    private int _settingsProtein;
+    public int SettingsProteinPercentGoal
+    {
+        get => _settingsProtein;
+        set { _settingsProtein = value; OnPropertyChanged(); }
+    }
+
+    private int _settingsFat;
+    public int SettingsFatPercentGoal
+    {
+        get => _settingsFat;
+        set { _settingsFat = value; OnPropertyChanged(); }
+    }
+
+    private int _settingsCarbs;
+    public int SettingsCarbsPercentGoal
+    {
+        get => _settingsCarbs;
+        set { _settingsCarbs = value; OnPropertyChanged(); }
+    }
+
+    // ===== STATYSTYKI =====
+    public ObservableCollection<int> StatsRanges { get; } = new() { 7, 14, 30 };
+
+    private int _selectedStatsRange = 7;
+    public int SelectedStatsRange
+    {
+        get => _selectedStatsRange;
+        set
+        {
+            if (_selectedStatsRange == value) return;
+            _selectedStatsRange = value;
+            OnPropertyChanged();
+            RefreshStatistics();
+        }
+    }
+
+    public ObservableCollection<DaySummary> StatsDays { get; } = new();
+
+    public int StatsTotalConsumed => StatsDays.Sum(d => d.Consumed);
+    public int StatsTotalBurned => StatsDays.Sum(d => d.Burned);
+    public int StatsTotalNet => StatsDays.Sum(d => d.Net);
+    public double StatsAvgNet => StatsDays.Count == 0 ? 0 : StatsDays.Average(d => d.Net);
 
     public MainViewModel()
     {
@@ -110,7 +214,6 @@ public class MainViewModel : BaseViewModel
         };
         _selectedDate = SelectedDay.Date;
 
-        // Tworzymy widoki i filtry
         MealsView = CollectionViewSource.GetDefaultView(Meals);
         ActivitiesView = CollectionViewSource.GetDefaultView(Activities);
 
@@ -120,7 +223,7 @@ public class MainViewModel : BaseViewModel
             return m.DateTime.Date == SelectedDate.Date;
         };
 
-        // PhysicalActivity u Ciebie nie ma DateTime, wiêc filtrujemy po DailyBalance.Date
+        // PhysicalActivity nie ma DateTime -> filtrujemy po DailyBalance.Date
         ActivitiesView.Filter = obj =>
         {
             if (obj is not PhysicalActivity a) return false;
@@ -133,30 +236,32 @@ public class MainViewModel : BaseViewModel
         DeleteMealCommand = new RelayCommand(p => DeleteMeal(p as Meal));
         DeleteActivityCommand = new RelayCommand(p => DeleteActivity(p as PhysicalActivity));
 
+        ApplySettingsCommand = new RelayCommand(_ => ApplySettings());
+        ResetSettingsCommand = new RelayCommand(_ => LoadSettingsFromCurrentUser());
+
         Meals.CollectionChanged += OnAnyCollectionChanged;
         Activities.CollectionChanged += OnAnyCollectionChanged;
 
         SeedExampleData();
+
         ApplyDateFilter();
         RefreshComputed();
+
+        LoadSettingsFromCurrentUser();
+        RefreshStatistics();
     }
 
     private void OnAnyCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         ApplyDateFilter();
         RefreshComputed();
+        RefreshStatistics();
     }
 
     private void ApplyDateFilter()
     {
         MealsView.Refresh();
         ActivitiesView.Refresh();
-
-        OnPropertyChanged(nameof(CaloriesConsumed));
-        OnPropertyChanged(nameof(CaloriesBurned));
-        OnPropertyChanged(nameof(NetBalance));
-        OnPropertyChanged(nameof(CaloriesRemainingToGoal));
-        OnPropertyChanged(nameof(GoalProgressText));
     }
 
     private void SeedExampleData()
@@ -210,7 +315,7 @@ public class MainViewModel : BaseViewModel
         Activities.Add(new PhysicalActivity
         {
             Id = nextId,
-            DailyBalance = SelectedDay, // kluczowe do filtrowania po dacie
+            DailyBalance = SelectedDay,
             Name = "Nowa aktywnoœæ",
             DurationMin = 20,
             BurnedCalories = 150,
@@ -234,6 +339,7 @@ public class MainViewModel : BaseViewModel
     {
         ApplyDateFilter();
         RefreshComputed();
+        RefreshStatistics();
     }
 
     private void RefreshComputed()
@@ -244,4 +350,95 @@ public class MainViewModel : BaseViewModel
         OnPropertyChanged(nameof(CaloriesRemainingToGoal));
         OnPropertyChanged(nameof(GoalProgressText));
     }
+
+    // ===== STATYSTYKI =====
+    private void RefreshStatistics()
+    {
+        StatsDays.Clear();
+
+        var start = SelectedDate.Date.AddDays(-(SelectedStatsRange - 1));
+        var end = SelectedDate.Date;
+
+        for (var day = start; day <= end; day = day.AddDays(1))
+        {
+            var mealsDay = Meals.Where(m => m.DateTime.Date == day).ToList();
+            var actsDay = Activities.Where(a => a.DailyBalance != null && a.DailyBalance.Date.Date == day).ToList();
+
+            var consumed = mealsDay.Sum(m => m.TotalCalories);
+            var burned = actsDay.Sum(a => a.BurnedCalories);
+
+            StatsDays.Add(new DaySummary
+            {
+                Date = day,
+                Consumed = consumed,
+                Burned = burned,
+                Net = consumed - burned,
+                MealsCount = mealsDay.Count,
+                ActivitiesCount = actsDay.Count
+            });
+        }
+
+        OnPropertyChanged(nameof(StatsTotalConsumed));
+        OnPropertyChanged(nameof(StatsTotalBurned));
+        OnPropertyChanged(nameof(StatsTotalNet));
+        OnPropertyChanged(nameof(StatsAvgNet));
+    }
+
+    // ===== USTAWIENIA =====
+    private void LoadSettingsFromCurrentUser()
+    {
+        SettingsFirstName = CurrentUser.FirstName;
+
+        // Jawne konwersje – niezale¿nie czy w modelu masz int czy double, to siê skompiluje
+        SettingsAge = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.Age)));
+        SettingsHeightCm = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.HeightCm)));
+        SettingsWeightKg = Convert.ToDouble(CurrentUser.WeightKg);
+
+        SettingsGender = CurrentUser.Gender;
+        SettingsActivityLevel = CurrentUser.ActivityLevel;
+
+        SettingsDailyCaloriesGoal = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.DailyCaloriesGoal)));
+        SettingsProteinPercentGoal = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.ProteinPercentGoal)));
+        SettingsFatPercentGoal = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.FatPercentGoal)));
+        SettingsCarbsPercentGoal = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.CarbsPercentGoal)));
+    }
+
+    private void ApplySettings()
+    {
+        if (string.IsNullOrWhiteSpace(SettingsFirstName)) SettingsFirstName = "U¿ytkownik";
+        if (SettingsAge < 1) SettingsAge = 1;
+        if (SettingsHeightCm < 50) SettingsHeightCm = 50;
+        if (SettingsWeightKg < 1) SettingsWeightKg = 1;
+
+        var sum = SettingsProteinPercentGoal + SettingsFatPercentGoal + SettingsCarbsPercentGoal;
+        if (sum != 100)
+            SettingsCarbsPercentGoal = Math.Max(0, 100 - SettingsProteinPercentGoal - SettingsFatPercentGoal);
+
+        CurrentUser = new User(
+            id: CurrentUser.Id,
+            firstName: SettingsFirstName,
+            age: SettingsAge,
+            heightCm: SettingsHeightCm,
+            weightKg: SettingsWeightKg,
+            gender: SettingsGender,
+            activityLevel: SettingsActivityLevel,
+            dailyCaloriesGoal: SettingsDailyCaloriesGoal,
+            proteinPercentGoal: SettingsProteinPercentGoal,
+            fatPercentGoal: SettingsFatPercentGoal,
+            carbsPercentGoal: SettingsCarbsPercentGoal
+        );
+
+        OnPropertyChanged(nameof(CurrentUser));
+        RefreshComputed();
+    }
+}
+
+public class DaySummary
+{
+    public DateTime Date { get; set; }
+    public int Consumed { get; set; }
+    public int Burned { get; set; }
+    public int Net { get; set; }
+    public int MealsCount { get; set; }
+    public int ActivitiesCount { get; set; }
 }

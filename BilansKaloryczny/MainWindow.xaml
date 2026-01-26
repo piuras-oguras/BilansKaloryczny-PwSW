@@ -180,7 +180,7 @@
 
                     <DataGrid Grid.Row="1"
                               x:Name="MealsGrid"
-                              ItemsSource="{Binding Meals}"
+                              ItemsSource="{Binding MealsView}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               IsReadOnly="True"
@@ -286,7 +286,7 @@
 
                     <DataGrid Grid.Row="1"
                               x:Name="ActivitiesGrid"
-                              ItemsSource="{Binding Activities}"
+                              ItemsSource="{Binding ActivitiesView}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
                               IsReadOnly="True"
@@ -377,20 +377,157 @@
 
             <TabItem Header="Statystyki">
                 <Grid Margin="12">
-                    <TextBlock Opacity="0.75"
-                               Text="Tu docelowo będą wykresy trendów (np. 7/14/30 dni): kalorie, bilans, makro."/>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <TextBlock Opacity="0.75" VerticalAlignment="Center" Text="Zakres:" Margin="0,0,8,0"/>
+                        <ComboBox Width="120"
+                      ItemsSource="{Binding StatsRanges}"
+                      SelectedItem="{Binding SelectedStatsRange, Mode=TwoWay}"/>
+                        <TextBlock Opacity="0.75" VerticalAlignment="Center" Text="dni" Margin="8,0,0,0"/>
+                    </StackPanel>
+
+                    <UniformGrid Grid.Row="1" Columns="4" Margin="0,12,0,12">
+                        <Border Padding="10" Margin="0,0,12,0" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Opacity="0.75" Text="Suma zjedzone"/>
+                                <TextBlock FontSize="18" FontWeight="SemiBold">
+                        <Run Text="{Binding StatsTotalConsumed, Mode=OneWay}"/><Run Text=" kcal"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Padding="10" Margin="0,0,12,0" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Opacity="0.75" Text="Suma spalone"/>
+                                <TextBlock FontSize="18" FontWeight="SemiBold">
+                        <Run Text="{Binding StatsTotalBurned, Mode=OneWay}"/><Run Text=" kcal"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Padding="10" Margin="0,0,12,0" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Opacity="0.75" Text="Bilans łącznie"/>
+                                <TextBlock FontSize="18" FontWeight="SemiBold">
+                        <Run Text="{Binding StatsTotalNet, Mode=OneWay}"/><Run Text=" kcal"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+
+                        <Border Padding="10" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1">
+                            <StackPanel>
+                                <TextBlock Opacity="0.75" Text="Śr. bilans / dzień"/>
+                                <TextBlock FontSize="18" FontWeight="SemiBold">
+                        <Run Text="{Binding StatsAvgNet,Mode=OneWay, StringFormat={}{0:0}}"/><Run Text=" kcal"/>
+                                </TextBlock>
+                            </StackPanel>
+                        </Border>
+                    </UniformGrid>
+
+                    <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding StatsDays}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  IsReadOnly="True">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Data" Binding="{Binding Date, StringFormat={}{0:yyyy-MM-dd}}" Width="140"/>
+                            <DataGridTextColumn Header="Zjedzone" Binding="{Binding Consumed}" Width="110"/>
+                            <DataGridTextColumn Header="Spalone" Binding="{Binding Burned}" Width="110"/>
+                            <DataGridTextColumn Header="Bilans" Binding="{Binding Net}" Width="110"/>
+                            <DataGridTextColumn Header="Posiłki" Binding="{Binding MealsCount}" Width="90"/>
+                            <DataGridTextColumn Header="Aktywności" Binding="{Binding ActivitiesCount}" Width="110"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
                 </Grid>
             </TabItem>
 
             <TabItem Header="Ustawienia">
                 <Grid Margin="12">
-                    <StackPanel>
-                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Ustawienia użytkownika"/>
-                        <TextBlock Margin="0,8,0,0" Opacity="0.75"
-                                   Text="Tu docelowo: limit kalorii i cele makro (procenty), dane profilu."/>
-                    </StackPanel>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="Ustawienia użytkownika"/>
+
+                    <Border Grid.Row="1" Padding="12" Margin="0,10,0,0" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="20"/>
+                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Imię:"/>
+                            <TextBox Grid.Row="0" Grid.Column="1"
+                         Text="{Binding SettingsFirstName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Grid.Row="0" Grid.Column="3" VerticalAlignment="Center" Text="Wiek:"/>
+                            <TextBox Grid.Row="0" Grid.Column="4"
+                         Text="{Binding SettingsAge, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Wzrost (cm):"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Margin="0,8,0,0"
+                         Text="{Binding SettingsHeightCm, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Grid.Row="1" Grid.Column="3" Margin="0,8,0,0" VerticalAlignment="Center" Text="Waga (kg):"/>
+                            <TextBox Grid.Row="1" Grid.Column="4" Margin="0,8,0,0"
+                         Text="{Binding SettingsWeightKg, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Płeć:"/>
+                            <ComboBox Grid.Row="2" Grid.Column="1" Margin="0,8,0,0"
+                          ItemsSource="{Binding Genders}"
+                          SelectedItem="{Binding SettingsGender, Mode=TwoWay}"/>
+
+                            <TextBlock Grid.Row="2" Grid.Column="3" Margin="0,8,0,0" VerticalAlignment="Center" Text="Aktywność:"/>
+                            <ComboBox Grid.Row="2" Grid.Column="4" Margin="0,8,0,0"
+                          ItemsSource="{Binding ActivityLevels}"
+                          SelectedItem="{Binding SettingsActivityLevel, Mode=TwoWay}"/>
+
+                            <TextBlock Grid.Row="3" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Cel kcal / dzień:"/>
+                            <TextBox Grid.Row="3" Grid.Column="1" Margin="0,8,0,0"
+                         Text="{Binding SettingsDailyCaloriesGoal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                            <TextBlock Grid.Row="4" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Makro cele (%):"/>
+                            <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,8,0,0" Orientation="Horizontal">
+                                <TextBlock VerticalAlignment="Center" Text="B:" Margin="0,0,6,0"/>
+                                <TextBox Width="60" Text="{Binding SettingsProteinPercentGoal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock VerticalAlignment="Center" Text=" T:" Margin="12,0,6,0"/>
+                                <TextBox Width="60" Text="{Binding SettingsFatPercentGoal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                <TextBlock VerticalAlignment="Center" Text=" W:" Margin="12,0,6,0"/>
+                                <TextBox Width="60" Text="{Binding SettingsCarbsPercentGoal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Row="6" Grid.ColumnSpan="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+                                <Button Padding="12,6" Margin="0,0,8,0"
+                            Command="{Binding ResetSettingsCommand}"
+                            Content="Przywróć"/>
+                                <Button Padding="12,6"
+                            Command="{Binding ApplySettingsCommand}"
+                            Content="Zapisz"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
                 </Grid>
             </TabItem>
+
 
         </TabControl>
     </Grid>
