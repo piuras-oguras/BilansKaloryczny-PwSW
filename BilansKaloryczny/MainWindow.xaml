@@ -127,7 +127,7 @@
                                 <TextBlock FontSize="16" FontWeight="SemiBold" Text="Posiłki (dziś)" />
                             </StackPanel>
 
-                            <DataGrid ItemsSource="{Binding Meals}"
+                            <DataGrid ItemsSource="{Binding MealsView}"
                                       AutoGenerateColumns="False"
                                       CanUserAddRows="False"
                                       IsReadOnly="True"
@@ -146,7 +146,7 @@
                                 <TextBlock FontSize="16" FontWeight="SemiBold" Text="Aktywności (dziś)" />
                             </StackPanel>
 
-                            <DataGrid ItemsSource="{Binding Activities}"
+                            <DataGrid ItemsSource="{Binding ActivitiesView}"
                                       AutoGenerateColumns="False"
                                       CanUserAddRows="False"
                                       IsReadOnly="True"

@@ -1,7 +1,9 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
+using System.Windows.Data;
 using BilansKaloryczny.Enums;
 using BilansKaloryczny.Models;
 
@@ -18,6 +20,14 @@ public class MainViewModel : BaseViewModel
     public ObservableCollection<MealCategory> MealCategories { get; } =
         new(Enum.GetValues(typeof(MealCategory)).Cast<MealCategory>());
 
+    // Dane "Ÿród³owe" (wszystkie rekordy)
+    public ObservableCollection<Meal> Meals { get; } = new();
+    public ObservableCollection<PhysicalActivity> Activities { get; } = new();
+
+    // Widoki filtrowane po dacie (pod to bindujesz DataGrid)
+    public ICollectionView MealsView { get; }
+    public ICollectionView ActivitiesView { get; }
+
     private DateTime _selectedDate = DateTime.Today;
     public DateTime SelectedDate
     {
@@ -28,9 +38,10 @@ public class MainViewModel : BaseViewModel
             _selectedDate = value.Date;
             OnPropertyChanged();
 
-            // Docelowo: tu bêdzie LoadDay(_selectedDate) z repozytorium/bazy
+            // Docelowo: LoadDay(_selectedDate) z bazy/repo
             SelectedDay = new DailyBalance { Id = SelectedDay.Id, Date = _selectedDate, User = CurrentUser };
 
+            ApplyDateFilter();
             RefreshComputed();
         }
     }
@@ -46,9 +57,6 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-    public ObservableCollection<Meal> Meals { get; } = new();
-    public ObservableCollection<PhysicalActivity> Activities { get; } = new();
-
     private Meal? _selectedMeal;
     public Meal? SelectedMeal
     {
@@ -63,9 +71,9 @@ public class MainViewModel : BaseViewModel
         set { _selectedActivity = value; OnPropertyChanged(); }
     }
 
-    // Pola liczone (tylko do odczytu)
-    public int CaloriesConsumed => Meals.Sum(m => m.TotalCalories);
-    public int CaloriesBurned => Activities.Sum(a => a.BurnedCalories);
+    // Pola liczone – liczymy tylko z widoków (czyli z wybranego dnia)
+    public int CaloriesConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalCalories);
+    public int CaloriesBurned => ActivitiesView.Cast<PhysicalActivity>().Sum(a => a.BurnedCalories);
     public int NetBalance => CaloriesConsumed - CaloriesBurned;
 
     public int CaloriesRemainingToGoal => Math.Max(0, CurrentUser.DailyCaloriesGoal - CaloriesConsumed);
@@ -100,8 +108,24 @@ public class MainViewModel : BaseViewModel
             Date = DateTime.Today,
             User = CurrentUser
         };
-
         _selectedDate = SelectedDay.Date;
+
+        // Tworzymy widoki i filtry
+        MealsView = CollectionViewSource.GetDefaultView(Meals);
+        ActivitiesView = CollectionViewSource.GetDefaultView(Activities);
+
+        MealsView.Filter = obj =>
+        {
+            if (obj is not Meal m) return false;
+            return m.DateTime.Date == SelectedDate.Date;
+        };
+
+        // PhysicalActivity u Ciebie nie ma DateTime, wiêc filtrujemy po DailyBalance.Date
+        ActivitiesView.Filter = obj =>
+        {
+            if (obj is not PhysicalActivity a) return false;
+            return a.DailyBalance != null && a.DailyBalance.Date.Date == SelectedDate.Date;
+        };
 
         AddMealCommand = new RelayCommand(_ => AddMeal());
         AddActivityCommand = new RelayCommand(_ => AddActivity());
@@ -109,15 +133,31 @@ public class MainViewModel : BaseViewModel
         DeleteMealCommand = new RelayCommand(p => DeleteMeal(p as Meal));
         DeleteActivityCommand = new RelayCommand(p => DeleteActivity(p as PhysicalActivity));
 
-        // Gdy ktoœ doda/usunie element (np. w przysz³oœci z innego miejsca), te¿ odœwie¿
-        Meals.CollectionChanged += OnMealsCollectionChanged;
-        Activities.CollectionChanged += OnActivitiesCollectionChanged;
+        Meals.CollectionChanged += OnAnyCollectionChanged;
+        Activities.CollectionChanged += OnAnyCollectionChanged;
 
         SeedExampleData();
+        ApplyDateFilter();
+        RefreshComputed();
     }
 
-    private void OnMealsCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => RefreshComputed();
-    private void OnActivitiesCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e) => RefreshComputed();
+    private void OnAnyCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        ApplyDateFilter();
+        RefreshComputed();
+    }
+
+    private void ApplyDateFilter()
+    {
+        MealsView.Refresh();
+        ActivitiesView.Refresh();
+
+        OnPropertyChanged(nameof(CaloriesConsumed));
+        OnPropertyChanged(nameof(CaloriesBurned));
+        OnPropertyChanged(nameof(NetBalance));
+        OnPropertyChanged(nameof(CaloriesRemainingToGoal));
+        OnPropertyChanged(nameof(GoalProgressText));
+    }
 
     private void SeedExampleData()
     {
@@ -127,7 +167,7 @@ public class MainViewModel : BaseViewModel
             DailyBalance = SelectedDay,
             Name = "Owsianka",
             Category = MealCategory.Breakfast,
-            DateTime = DateTime.Now,
+            DateTime = SelectedDate.Date.AddHours(9),
             TotalCalories = 450,
             TotalProtein = 20,
             TotalFat = 12,
@@ -143,8 +183,6 @@ public class MainViewModel : BaseViewModel
             BurnedCalories = 120,
             Intensity = ActivityIntensity.Low
         });
-
-        RefreshComputed();
     }
 
     private void AddMeal()
@@ -157,14 +195,12 @@ public class MainViewModel : BaseViewModel
             DailyBalance = SelectedDay,
             Name = "Nowy posi³ek",
             Category = MealCategory.Snack,
-            DateTime = DateTime.Now,
+            DateTime = SelectedDate.Date.AddHours(DateTime.Now.Hour).AddMinutes(DateTime.Now.Minute),
             TotalCalories = 300,
             TotalProtein = 10,
             TotalFat = 10,
             TotalCarbs = 40
         });
-
-        RefreshComputed();
     }
 
     private void AddActivity()
@@ -174,32 +210,31 @@ public class MainViewModel : BaseViewModel
         Activities.Add(new PhysicalActivity
         {
             Id = nextId,
-            DailyBalance = SelectedDay,
+            DailyBalance = SelectedDay, // kluczowe do filtrowania po dacie
             Name = "Nowa aktywnoœæ",
             DurationMin = 20,
             BurnedCalories = 150,
             Intensity = ActivityIntensity.Medium
         });
-
-        RefreshComputed();
     }
 
     private void DeleteMeal(Meal? meal)
     {
         if (meal is null) return;
         Meals.Remove(meal);
-        RefreshComputed();
     }
 
     private void DeleteActivity(PhysicalActivity? activity)
     {
         if (activity is null) return;
         Activities.Remove(activity);
-        RefreshComputed();
     }
 
-    // Wywo³uj z MainWindow.xaml.cs po klikniêciu "Zapisz" / "Anuluj"
-    public void RefreshAfterEdit() => RefreshComputed();
+    public void RefreshAfterEdit()
+    {
+        ApplyDateFilter();
+        RefreshComputed();
+    }
 
     private void RefreshComputed()
     {
