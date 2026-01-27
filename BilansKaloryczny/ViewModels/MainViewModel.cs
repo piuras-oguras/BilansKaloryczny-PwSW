@@ -13,7 +13,6 @@ public class MainViewModel : BaseViewModel
 {
     public User CurrentUser { get; set; }
 
-    // ComboBox-y
     public ObservableCollection<ActivityIntensity> Intensities { get; } =
         new(Enum.GetValues(typeof(ActivityIntensity)).Cast<ActivityIntensity>());
 
@@ -26,11 +25,9 @@ public class MainViewModel : BaseViewModel
     public ObservableCollection<ActivityLevel> ActivityLevels { get; } =
         new(Enum.GetValues(typeof(ActivityLevel)).Cast<ActivityLevel>());
 
-    // Dane Ÿród³owe (wszystkie rekordy)
     public ObservableCollection<Meal> Meals { get; } = new();
     public ObservableCollection<PhysicalActivity> Activities { get; } = new();
 
-    // Widoki filtrowane po dacie (pod DataGrid)
     public ICollectionView MealsView { get; }
     public ICollectionView ActivitiesView { get; }
 
@@ -44,7 +41,6 @@ public class MainViewModel : BaseViewModel
             _selectedDate = value.Date;
             OnPropertyChanged();
 
-            // Docelowo: LoadDay(_selectedDate) z bazy/repo
             SelectedDay = new DailyBalance { Id = SelectedDay.Id, Date = _selectedDate, User = CurrentUser };
 
             ApplyDateFilter();
@@ -78,7 +74,6 @@ public class MainViewModel : BaseViewModel
         set { _selectedActivity = value; OnPropertyChanged(); }
     }
 
-    // Liczniki liczone z widoków (czyli z wybranego dnia)
     public int CaloriesConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalCalories);
     public int CaloriesBurned => ActivitiesView.Cast<PhysicalActivity>().Sum(a => a.BurnedCalories);
     public int NetBalance => CaloriesConsumed - CaloriesBurned;
@@ -87,7 +82,6 @@ public class MainViewModel : BaseViewModel
     public string GoalProgressText
         => $"{CaloriesConsumed} / {CurrentUser.DailyCaloriesGoal} kcal ({(CurrentUser.DailyCaloriesGoal == 0 ? 0 : (int)Math.Round(100.0 * CaloriesConsumed / CurrentUser.DailyCaloriesGoal))}%)";
 
-    // Komendy
     public RelayCommand AddMealCommand { get; }
     public RelayCommand AddActivityCommand { get; }
     public RelayCommand DeleteMealCommand { get; }
@@ -96,7 +90,6 @@ public class MainViewModel : BaseViewModel
     public RelayCommand ApplySettingsCommand { get; }
     public RelayCommand ResetSettingsCommand { get; }
 
-    // ===== USTAWIENIA (pola edycyjne) =====
     private string _settingsFirstName = "";
     public string SettingsFirstName
     {
@@ -167,7 +160,6 @@ public class MainViewModel : BaseViewModel
         set { _settingsCarbs = value; OnPropertyChanged(); }
     }
 
-    // ===== STATYSTYKI =====
     public ObservableCollection<int> StatsRanges { get; } = new() { 7, 14, 30 };
 
     private int _selectedStatsRange = 7;
@@ -223,7 +215,6 @@ public class MainViewModel : BaseViewModel
             return m.DateTime.Date == SelectedDate.Date;
         };
 
-        // PhysicalActivity nie ma DateTime -> filtrujemy po DailyBalance.Date
         ActivitiesView.Filter = obj =>
         {
             if (obj is not PhysicalActivity a) return false;
@@ -351,7 +342,6 @@ public class MainViewModel : BaseViewModel
         OnPropertyChanged(nameof(GoalProgressText));
     }
 
-    // ===== STATYSTYKI =====
     private void RefreshStatistics()
     {
         StatsDays.Clear();
@@ -384,12 +374,10 @@ public class MainViewModel : BaseViewModel
         OnPropertyChanged(nameof(StatsAvgNet));
     }
 
-    // ===== USTAWIENIA =====
     private void LoadSettingsFromCurrentUser()
     {
         SettingsFirstName = CurrentUser.FirstName;
 
-        // Jawne konwersje – niezale¿nie czy w modelu masz int czy double, to siê skompiluje
         SettingsAge = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.Age)));
         SettingsHeightCm = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.HeightCm)));
         SettingsWeightKg = Convert.ToDouble(CurrentUser.WeightKg);

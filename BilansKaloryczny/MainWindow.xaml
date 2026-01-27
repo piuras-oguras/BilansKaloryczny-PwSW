@@ -12,7 +12,6 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Pasek górny -->
         <Border Padding="10" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -47,10 +46,8 @@
             </Grid>
         </Border>
 
-        <!-- Zakładki -->
         <TabControl Grid.Row="1" Margin="0,12,0,0">
 
-            <!-- DASHBOARD (podgląd) -->
             <TabItem Header="Dashboard">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
@@ -121,7 +118,6 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Posiłki (podgląd) -->
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
                                 <TextBlock FontSize="16" FontWeight="SemiBold" Text="Posiłki (dziś)" />
@@ -140,7 +136,6 @@
                             </DataGrid>
                         </DockPanel>
 
-                        <!-- Aktywności (podgląd) -->
                         <DockPanel Grid.Column="2">
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
                                 <TextBlock FontSize="16" FontWeight="SemiBold" Text="Aktywności (dziś)" />
@@ -162,8 +157,6 @@
                     </Grid>
                 </Grid>
             </TabItem>
-
-            <!-- POSIŁKI (edycja w RowDetails) -->
             <TabItem Header="Posiłki">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
@@ -269,7 +262,6 @@
                 </Grid>
             </TabItem>
 
-            <!-- AKTYWNOŚCI (edycja w RowDetails) -->
             <TabItem Header="Aktywności">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>

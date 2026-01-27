@@ -10,7 +10,6 @@ namespace BilansKaloryczny
         {
             InitializeComponent();
 
-            // Kluczowa linia: podpinamy ViewModel
             DataContext = new MainViewModel();
         }
 
@@ -45,7 +44,6 @@ namespace BilansKaloryczny
             if (grid.ItemContainerGenerator.ContainerFromItem(item) is DataGridRow row)
                 row.DetailsVisibility = Visibility.Collapsed;
 
-            // Odśwież liczniki
             if (DataContext is MainViewModel vm)
                 vm.RefreshAfterEdit();
         }
