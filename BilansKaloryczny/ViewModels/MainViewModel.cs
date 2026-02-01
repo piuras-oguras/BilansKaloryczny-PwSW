@@ -44,7 +44,6 @@ public class MainViewModel : BaseViewModel
             _selectedDate = value.Date;
             OnPropertyChanged();
 
-            // Docelowo: LoadDay(_selectedDate) z bazy/repo
             SelectedDay = new DailyBalance { Id = SelectedDay.Id, Date = _selectedDate, User = CurrentUser };
 
             ApplyDateFilter();
@@ -57,11 +56,7 @@ public class MainViewModel : BaseViewModel
     public DailyBalance SelectedDay
     {
         get => _selectedDay;
-        set
-        {
-            _selectedDay = value;
-            OnPropertyChanged();
-        }
+        set { _selectedDay = value; OnPropertyChanged(); }
     }
 
     private Meal? _selectedMeal;
@@ -77,7 +72,6 @@ public class MainViewModel : BaseViewModel
         get => _selectedActivity;
         set { _selectedActivity = value; OnPropertyChanged(); }
     }
-
 
     // ===== HISTORIA (szablony) =====
     public ObservableCollection<Meal> MealHistory { get; } = new();
@@ -106,11 +100,30 @@ public class MainViewModel : BaseViewModel
             AddActivityFromHistoryCommand.RaiseCanExecuteChanged();
         }
     }
+
     // Liczniki liczone z widoków (czyli z wybranego dnia)
     public int CaloriesConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalCalories);
     public int CaloriesBurned => ActivitiesView.Cast<PhysicalActivity>().Sum(a => a.BurnedCalories);
     public int NetBalance => CaloriesConsumed - CaloriesBurned;
     public int CaloriesRemainingToGoal => Math.Max(0, CurrentUser.DailyCaloriesGoal - CaloriesConsumed);
+
+    // ===== MAKRO (dla wybranego dnia) =====
+    public double ProteinConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalProtein);
+    public double FatConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalFat);
+    public double CarbsConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalCarbs);
+
+    // Cele w gramach (prosto z User)
+    public double ProteinGoalGrams => CurrentUser.ProteinGramsGoal;
+    public double FatGoalGrams => CurrentUser.FatGramsGoal;
+    public double CarbsGoalGrams => CurrentUser.CarbsGramsGoal;
+
+    public double ProteinRemainingToGoal => Math.Max(0, ProteinGoalGrams - ProteinConsumed);
+    public double FatRemainingToGoal => Math.Max(0, FatGoalGrams - FatConsumed);
+    public double CarbsRemainingToGoal => Math.Max(0, CarbsGoalGrams - CarbsConsumed);
+
+    public string ProteinProgressText => $"{ProteinConsumed:0.#} / {ProteinGoalGrams:0.#} g";
+    public string FatProgressText => $"{FatConsumed:0.#} / {FatGoalGrams:0.#} g";
+    public string CarbsProgressText => $"{CarbsConsumed:0.#} / {CarbsGoalGrams:0.#} g";
 
     public string GoalProgressText
         => $"{CaloriesConsumed} / {CurrentUser.DailyCaloriesGoal} kcal ({(CurrentUser.DailyCaloriesGoal == 0 ? 0 : (int)Math.Round(100.0 * CaloriesConsumed / CurrentUser.DailyCaloriesGoal))}%)";
@@ -177,25 +190,26 @@ public class MainViewModel : BaseViewModel
         set { _settingsDailyGoal = value; OnPropertyChanged(); }
     }
 
-    private int _settingsProtein;
-    public int SettingsProteinPercentGoal
+    // Makro cele w gramach (zamiast %)
+    private double _settingsProteinG;
+    public double SettingsProteinGramsGoal
     {
-        get => _settingsProtein;
-        set { _settingsProtein = value; OnPropertyChanged(); }
+        get => _settingsProteinG;
+        set { _settingsProteinG = value; OnPropertyChanged(); }
     }
 
-    private int _settingsFat;
-    public int SettingsFatPercentGoal
+    private double _settingsFatG;
+    public double SettingsFatGramsGoal
     {
-        get => _settingsFat;
-        set { _settingsFat = value; OnPropertyChanged(); }
+        get => _settingsFatG;
+        set { _settingsFatG = value; OnPropertyChanged(); }
     }
 
-    private int _settingsCarbs;
-    public int SettingsCarbsPercentGoal
+    private double _settingsCarbsG;
+    public double SettingsCarbsGramsGoal
     {
-        get => _settingsCarbs;
-        set { _settingsCarbs = value; OnPropertyChanged(); }
+        get => _settingsCarbsG;
+        set { _settingsCarbsG = value; OnPropertyChanged(); }
     }
 
     // ===== STATYSTYKI =====
@@ -223,6 +237,7 @@ public class MainViewModel : BaseViewModel
 
     public MainViewModel()
     {
+        // UWAGA: konstruktor User musi przyjmowaæ gramy (albo ustaw je po konstruktorze)
         CurrentUser = new User(
             id: 1,
             firstName: "Szymon",
@@ -232,9 +247,9 @@ public class MainViewModel : BaseViewModel
             gender: Gender.Male,
             activityLevel: ActivityLevel.Moderate,
             dailyCaloriesGoal: 2500,
-            proteinPercentGoal: 25,
-            fatPercentGoal: 30,
-            carbsPercentGoal: 45
+            proteinGramsGoal: 160,
+            fatGramsGoal: 80,
+            carbsGramsGoal: 260
         );
 
         SelectedDay = new DailyBalance
@@ -360,10 +375,8 @@ public class MainViewModel : BaseViewModel
         });
     }
 
-
     private void RefreshHistory()
     {
-        // prosta historia: unikalne wpisy po nazwie + parametrach
         var mealPresets = Meals
             .GroupBy(m => new { m.Name, m.Category, m.TotalCalories, m.TotalProtein, m.TotalFat, m.TotalCarbs })
             .Select(g => g.First())
@@ -453,9 +466,21 @@ public class MainViewModel : BaseViewModel
         OnPropertyChanged(nameof(NetBalance));
         OnPropertyChanged(nameof(CaloriesRemainingToGoal));
         OnPropertyChanged(nameof(GoalProgressText));
+
+        OnPropertyChanged(nameof(ProteinConsumed));
+        OnPropertyChanged(nameof(FatConsumed));
+        OnPropertyChanged(nameof(CarbsConsumed));
+        OnPropertyChanged(nameof(ProteinGoalGrams));
+        OnPropertyChanged(nameof(FatGoalGrams));
+        OnPropertyChanged(nameof(CarbsGoalGrams));
+        OnPropertyChanged(nameof(ProteinRemainingToGoal));
+        OnPropertyChanged(nameof(FatRemainingToGoal));
+        OnPropertyChanged(nameof(CarbsRemainingToGoal));
+        OnPropertyChanged(nameof(ProteinProgressText));
+        OnPropertyChanged(nameof(FatProgressText));
+        OnPropertyChanged(nameof(CarbsProgressText));
     }
 
-    // ===== STATYSTYKI =====
     private void RefreshStatistics()
     {
         StatsDays.Clear();
@@ -488,23 +513,23 @@ public class MainViewModel : BaseViewModel
         OnPropertyChanged(nameof(StatsAvgNet));
     }
 
-    // ===== USTAWIENIA =====
     private void LoadSettingsFromCurrentUser()
     {
         SettingsFirstName = CurrentUser.FirstName;
 
-        // Jawne konwersje – niezale¿nie czy w modelu masz int czy double, to siê skompiluje
-        SettingsAge = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.Age)));
-        SettingsHeightCm = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.HeightCm)));
-        SettingsWeightKg = Convert.ToDouble(CurrentUser.WeightKg);
+        SettingsAge = CurrentUser.Age;
+        SettingsHeightCm = CurrentUser.HeightCm;
+        SettingsWeightKg = CurrentUser.WeightKg;
 
         SettingsGender = CurrentUser.Gender;
         SettingsActivityLevel = CurrentUser.ActivityLevel;
 
-        SettingsDailyCaloriesGoal = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.DailyCaloriesGoal)));
-        SettingsProteinPercentGoal = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.ProteinPercentGoal)));
-        SettingsFatPercentGoal = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.FatPercentGoal)));
-        SettingsCarbsPercentGoal = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.CarbsPercentGoal)));
+        SettingsDailyCaloriesGoal = CurrentUser.DailyCaloriesGoal;
+
+        // gramy
+        SettingsProteinGramsGoal = CurrentUser.ProteinGramsGoal;
+        SettingsFatGramsGoal = CurrentUser.FatGramsGoal;
+        SettingsCarbsGramsGoal = CurrentUser.CarbsGramsGoal;
     }
 
     private void ApplySettings()
@@ -514,9 +539,11 @@ public class MainViewModel : BaseViewModel
         if (SettingsHeightCm < 50) SettingsHeightCm = 50;
         if (SettingsWeightKg < 1) SettingsWeightKg = 1;
 
-        var sum = SettingsProteinPercentGoal + SettingsFatPercentGoal + SettingsCarbsPercentGoal;
-        if (sum != 100)
-            SettingsCarbsPercentGoal = Math.Max(0, 100 - SettingsProteinPercentGoal - SettingsFatPercentGoal);
+        if (SettingsDailyCaloriesGoal < 0) SettingsDailyCaloriesGoal = 0;
+
+        if (SettingsProteinGramsGoal < 0) SettingsProteinGramsGoal = 0;
+        if (SettingsFatGramsGoal < 0) SettingsFatGramsGoal = 0;
+        if (SettingsCarbsGramsGoal < 0) SettingsCarbsGramsGoal = 0;
 
         CurrentUser = new User(
             id: CurrentUser.Id,
@@ -527,9 +554,9 @@ public class MainViewModel : BaseViewModel
             gender: SettingsGender,
             activityLevel: SettingsActivityLevel,
             dailyCaloriesGoal: SettingsDailyCaloriesGoal,
-            proteinPercentGoal: SettingsProteinPercentGoal,
-            fatPercentGoal: SettingsFatPercentGoal,
-            carbsPercentGoal: SettingsCarbsPercentGoal
+            proteinGramsGoal: SettingsProteinGramsGoal,
+            fatGramsGoal: SettingsFatGramsGoal,
+            carbsGramsGoal: SettingsCarbsGramsGoal
         );
 
         OnPropertyChanged(nameof(CurrentUser));

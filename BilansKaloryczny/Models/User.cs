@@ -15,9 +15,10 @@ public class User
 
     public int DailyCaloriesGoal { get; set; }
 
-    public double ProteinPercentGoal { get; set; }
-    public double FatPercentGoal { get; set; }
-    public double CarbsPercentGoal { get; set; }
+    // CELE MAKRO W GRAMACH
+    public double ProteinGramsGoal { get; set; }
+    public double FatGramsGoal { get; set; }
+    public double CarbsGramsGoal { get; set; }
 
     public User() { }
 
@@ -30,9 +31,9 @@ public class User
         Gender gender,
         ActivityLevel activityLevel,
         int dailyCaloriesGoal,
-        double proteinPercentGoal,
-        double fatPercentGoal,
-        double carbsPercentGoal)
+        double proteinGramsGoal,
+        double fatGramsGoal,
+        double carbsGramsGoal)
     {
         Id = id;
         FirstName = firstName;
@@ -42,8 +43,9 @@ public class User
         Gender = gender;
         ActivityLevel = activityLevel;
         DailyCaloriesGoal = dailyCaloriesGoal;
-        ProteinPercentGoal = proteinPercentGoal;
-        FatPercentGoal = fatPercentGoal;
-        CarbsPercentGoal = carbsPercentGoal;
+
+        ProteinGramsGoal = proteinGramsGoal;
+        FatGramsGoal = fatGramsGoal;
+        CarbsGramsGoal = carbsGramsGoal;
     }
 }
