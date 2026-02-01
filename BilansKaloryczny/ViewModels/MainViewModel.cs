@@ -13,6 +13,7 @@ public class MainViewModel : BaseViewModel
 {
     public User CurrentUser { get; set; }
 
+    // ComboBox-y
     public ObservableCollection<ActivityIntensity> Intensities { get; } =
         new(Enum.GetValues(typeof(ActivityIntensity)).Cast<ActivityIntensity>());
 
@@ -25,9 +26,11 @@ public class MainViewModel : BaseViewModel
     public ObservableCollection<ActivityLevel> ActivityLevels { get; } =
         new(Enum.GetValues(typeof(ActivityLevel)).Cast<ActivityLevel>());
 
+    // Dane Ÿród³owe (wszystkie rekordy)
     public ObservableCollection<Meal> Meals { get; } = new();
     public ObservableCollection<PhysicalActivity> Activities { get; } = new();
 
+    // Widoki filtrowane po dacie (pod DataGrid)
     public ICollectionView MealsView { get; }
     public ICollectionView ActivitiesView { get; }
 
@@ -41,6 +44,7 @@ public class MainViewModel : BaseViewModel
             _selectedDate = value.Date;
             OnPropertyChanged();
 
+            // Docelowo: LoadDay(_selectedDate) z bazy/repo
             SelectedDay = new DailyBalance { Id = SelectedDay.Id, Date = _selectedDate, User = CurrentUser };
 
             ApplyDateFilter();
@@ -74,6 +78,35 @@ public class MainViewModel : BaseViewModel
         set { _selectedActivity = value; OnPropertyChanged(); }
     }
 
+
+    // ===== HISTORIA (szablony) =====
+    public ObservableCollection<Meal> MealHistory { get; } = new();
+    public ObservableCollection<PhysicalActivity> ActivityHistory { get; } = new();
+
+    private Meal? _selectedMealFromHistory;
+    public Meal? SelectedMealFromHistory
+    {
+        get => _selectedMealFromHistory;
+        set
+        {
+            _selectedMealFromHistory = value;
+            OnPropertyChanged();
+            AddMealFromHistoryCommand.RaiseCanExecuteChanged();
+        }
+    }
+
+    private PhysicalActivity? _selectedActivityFromHistory;
+    public PhysicalActivity? SelectedActivityFromHistory
+    {
+        get => _selectedActivityFromHistory;
+        set
+        {
+            _selectedActivityFromHistory = value;
+            OnPropertyChanged();
+            AddActivityFromHistoryCommand.RaiseCanExecuteChanged();
+        }
+    }
+    // Liczniki liczone z widoków (czyli z wybranego dnia)
     public int CaloriesConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalCalories);
     public int CaloriesBurned => ActivitiesView.Cast<PhysicalActivity>().Sum(a => a.BurnedCalories);
     public int NetBalance => CaloriesConsumed - CaloriesBurned;
@@ -82,14 +115,19 @@ public class MainViewModel : BaseViewModel
     public string GoalProgressText
         => $"{CaloriesConsumed} / {CurrentUser.DailyCaloriesGoal} kcal ({(CurrentUser.DailyCaloriesGoal == 0 ? 0 : (int)Math.Round(100.0 * CaloriesConsumed / CurrentUser.DailyCaloriesGoal))}%)";
 
+    // Komendy
     public RelayCommand AddMealCommand { get; }
     public RelayCommand AddActivityCommand { get; }
     public RelayCommand DeleteMealCommand { get; }
     public RelayCommand DeleteActivityCommand { get; }
 
+    public RelayCommand AddMealFromHistoryCommand { get; }
+    public RelayCommand AddActivityFromHistoryCommand { get; }
+
     public RelayCommand ApplySettingsCommand { get; }
     public RelayCommand ResetSettingsCommand { get; }
 
+    // ===== USTAWIENIA (pola edycyjne) =====
     private string _settingsFirstName = "";
     public string SettingsFirstName
     {
@@ -160,6 +198,7 @@ public class MainViewModel : BaseViewModel
         set { _settingsCarbs = value; OnPropertyChanged(); }
     }
 
+    // ===== STATYSTYKI =====
     public ObservableCollection<int> StatsRanges { get; } = new() { 7, 14, 30 };
 
     private int _selectedStatsRange = 7;
@@ -218,11 +257,14 @@ public class MainViewModel : BaseViewModel
         ActivitiesView.Filter = obj =>
         {
             if (obj is not PhysicalActivity a) return false;
-            return a.DailyBalance != null && a.DailyBalance.Date.Date == SelectedDate.Date;
+            return a.DateTime.Date == SelectedDate.Date;
         };
 
         AddMealCommand = new RelayCommand(_ => AddMeal());
         AddActivityCommand = new RelayCommand(_ => AddActivity());
+
+        AddMealFromHistoryCommand = new RelayCommand(_ => AddMealFromHistory(), _ => SelectedMealFromHistory != null);
+        AddActivityFromHistoryCommand = new RelayCommand(_ => AddActivityFromHistory(), _ => SelectedActivityFromHistory != null);
 
         DeleteMealCommand = new RelayCommand(p => DeleteMeal(p as Meal));
         DeleteActivityCommand = new RelayCommand(p => DeleteActivity(p as PhysicalActivity));
@@ -234,6 +276,7 @@ public class MainViewModel : BaseViewModel
         Activities.CollectionChanged += OnAnyCollectionChanged;
 
         SeedExampleData();
+        RefreshHistory();
 
         ApplyDateFilter();
         RefreshComputed();
@@ -245,6 +288,7 @@ public class MainViewModel : BaseViewModel
     private void OnAnyCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
     {
         ApplyDateFilter();
+        RefreshHistory();
         RefreshComputed();
         RefreshStatistics();
     }
@@ -275,6 +319,7 @@ public class MainViewModel : BaseViewModel
             Id = 1,
             DailyBalance = SelectedDay,
             Name = "Spacer",
+            DateTime = SelectedDate.Date.AddHours(18),
             DurationMin = 30,
             BurnedCalories = 120,
             Intensity = ActivityIntensity.Low
@@ -308,9 +353,76 @@ public class MainViewModel : BaseViewModel
             Id = nextId,
             DailyBalance = SelectedDay,
             Name = "Nowa aktywnoœæ",
+            DateTime = SelectedDate.Date.AddHours(DateTime.Now.Hour).AddMinutes(DateTime.Now.Minute),
             DurationMin = 20,
             BurnedCalories = 150,
             Intensity = ActivityIntensity.Medium
+        });
+    }
+
+
+    private void RefreshHistory()
+    {
+        // prosta historia: unikalne wpisy po nazwie + parametrach
+        var mealPresets = Meals
+            .GroupBy(m => new { m.Name, m.Category, m.TotalCalories, m.TotalProtein, m.TotalFat, m.TotalCarbs })
+            .Select(g => g.First())
+            .OrderBy(m => m.Name)
+            .ToList();
+
+        MealHistory.Clear();
+        foreach (var m in mealPresets)
+            MealHistory.Add(m);
+
+        var actPresets = Activities
+            .GroupBy(a => new { a.Name, a.DurationMin, a.BurnedCalories, a.Intensity })
+            .Select(g => g.First())
+            .OrderBy(a => a.Name)
+            .ToList();
+
+        ActivityHistory.Clear();
+        foreach (var a in actPresets)
+            ActivityHistory.Add(a);
+
+        AddMealFromHistoryCommand.RaiseCanExecuteChanged();
+        AddActivityFromHistoryCommand.RaiseCanExecuteChanged();
+    }
+
+    private void AddMealFromHistory()
+    {
+        if (SelectedMealFromHistory is null) return;
+
+        var nextId = Meals.Count == 0 ? 1 : Meals.Max(m => m.Id) + 1;
+
+        Meals.Add(new Meal
+        {
+            Id = nextId,
+            DailyBalance = SelectedDay,
+            Name = SelectedMealFromHistory.Name,
+            Category = SelectedMealFromHistory.Category,
+            DateTime = SelectedDate.Date.AddHours(DateTime.Now.Hour).AddMinutes(DateTime.Now.Minute),
+            TotalCalories = SelectedMealFromHistory.TotalCalories,
+            TotalProtein = SelectedMealFromHistory.TotalProtein,
+            TotalFat = SelectedMealFromHistory.TotalFat,
+            TotalCarbs = SelectedMealFromHistory.TotalCarbs
+        });
+    }
+
+    private void AddActivityFromHistory()
+    {
+        if (SelectedActivityFromHistory is null) return;
+
+        var nextId = Activities.Count == 0 ? 1 : Activities.Max(a => a.Id) + 1;
+
+        Activities.Add(new PhysicalActivity
+        {
+            Id = nextId,
+            DailyBalance = SelectedDay,
+            Name = SelectedActivityFromHistory.Name,
+            DateTime = SelectedDate.Date.AddHours(DateTime.Now.Hour).AddMinutes(DateTime.Now.Minute),
+            DurationMin = SelectedActivityFromHistory.DurationMin,
+            BurnedCalories = SelectedActivityFromHistory.BurnedCalories,
+            Intensity = SelectedActivityFromHistory.Intensity
         });
     }
 
@@ -329,6 +441,7 @@ public class MainViewModel : BaseViewModel
     public void RefreshAfterEdit()
     {
         ApplyDateFilter();
+        RefreshHistory();
         RefreshComputed();
         RefreshStatistics();
     }
@@ -342,6 +455,7 @@ public class MainViewModel : BaseViewModel
         OnPropertyChanged(nameof(GoalProgressText));
     }
 
+    // ===== STATYSTYKI =====
     private void RefreshStatistics()
     {
         StatsDays.Clear();
@@ -352,7 +466,7 @@ public class MainViewModel : BaseViewModel
         for (var day = start; day <= end; day = day.AddDays(1))
         {
             var mealsDay = Meals.Where(m => m.DateTime.Date == day).ToList();
-            var actsDay = Activities.Where(a => a.DailyBalance != null && a.DailyBalance.Date.Date == day).ToList();
+            var actsDay = Activities.Where(a => a.DateTime.Date == day).ToList();
 
             var consumed = mealsDay.Sum(m => m.TotalCalories);
             var burned = actsDay.Sum(a => a.BurnedCalories);
@@ -374,10 +488,12 @@ public class MainViewModel : BaseViewModel
         OnPropertyChanged(nameof(StatsAvgNet));
     }
 
+    // ===== USTAWIENIA =====
     private void LoadSettingsFromCurrentUser()
     {
         SettingsFirstName = CurrentUser.FirstName;
 
+        // Jawne konwersje – niezale¿nie czy w modelu masz int czy double, to siê skompiluje
         SettingsAge = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.Age)));
         SettingsHeightCm = Convert.ToInt32(Math.Round(Convert.ToDouble(CurrentUser.HeightCm)));
         SettingsWeightKg = Convert.ToDouble(CurrentUser.WeightKg);

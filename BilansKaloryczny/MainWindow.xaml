@@ -12,6 +12,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- Pasek górny -->
         <Border Padding="10" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -46,8 +47,10 @@
             </Grid>
         </Border>
 
+        <!-- Zakładki -->
         <TabControl Grid.Row="1" Margin="0,12,0,0">
 
+            <!-- DASHBOARD (podgląd) -->
             <TabItem Header="Dashboard">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
@@ -118,6 +121,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
+                        <!-- Posiłki (podgląd) -->
                         <DockPanel>
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
                                 <TextBlock FontSize="16" FontWeight="SemiBold" Text="Posiłki (dziś)" />
@@ -136,6 +140,7 @@
                             </DataGrid>
                         </DockPanel>
 
+                        <!-- Aktywności (podgląd) -->
                         <DockPanel Grid.Column="2">
                             <StackPanel DockPanel.Dock="Top" Orientation="Horizontal">
                                 <TextBlock FontSize="16" FontWeight="SemiBold" Text="Aktywności (dziś)" />
@@ -157,6 +162,8 @@
                     </Grid>
                 </Grid>
             </TabItem>
+
+            <!-- POSIŁKI (edycja w RowDetails) -->
             <TabItem Header="Posiłki">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
@@ -166,9 +173,30 @@
 
                     <StackPanel Orientation="Horizontal">
                         <Button Height="32"
-                                Padding="12,0"
-                                Command="{Binding AddMealCommand}"
-                                Content="Dodaj posiłek"/>
+            Padding="12,0"
+            Command="{Binding AddMealCommand}"
+            Content="Dodaj posiłek"/>
+
+                        <ComboBox Width="260" Height="32" Margin="10,0,0,0"
+              ItemsSource="{Binding MealHistory}"
+              SelectedItem="{Binding SelectedMealFromHistory, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                    <Run Text="{Binding Name}"/>
+                    <Run Text=" ("/>
+                    <Run Text="{Binding Category}"/>
+                    <Run Text=", "/>
+                    <Run Text="{Binding TotalCalories}"/>
+                    <Run Text=" kcal)"/>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <Button Height="32" Padding="12,0" Margin="10,0,0,0"
+            Command="{Binding AddMealFromHistoryCommand}"
+            Content="Dodaj z historii"/>
                     </StackPanel>
 
                     <DataGrid Grid.Row="1"
@@ -212,8 +240,14 @@
                                                  Text="{Binding TotalCalories, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
                                         <TextBlock Grid.Row="1" Grid.Column="3" Margin="0,8,0,0" VerticalAlignment="Center" Text="Data/czas:"/>
-                                        <TextBox Grid.Row="1" Grid.Column="4" Margin="0,8,0,0"
-                                                 Text="{Binding DateTime, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        <StackPanel Grid.Row="1" Grid.Column="4" Margin="0,8,0,0" Orientation="Horizontal">
+                                            <TextBlock Width="90"
+                                                       VerticalAlignment="Center"
+                                                       Text="{Binding DateTime, Mode=OneWay, StringFormat={}{0:yyyy-MM-dd}}"/>
+                                            <TextBox Width="70" Margin="8,0,0,0"
+                                                     ToolTip="Format: HH:mm"
+                                                     Text="{Binding Time, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
 
                                         <StackPanel Grid.Row="2" Grid.ColumnSpan="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
                                             <Button Padding="10,4" Margin="0,0,8,0"
@@ -262,6 +296,7 @@
                 </Grid>
             </TabItem>
 
+            <!-- AKTYWNOŚCI (edycja w RowDetails) -->
             <TabItem Header="Aktywności">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
@@ -271,9 +306,30 @@
 
                     <StackPanel Orientation="Horizontal">
                         <Button Height="32"
-                                Padding="12,0"
-                                Command="{Binding AddActivityCommand}"
-                                Content="Dodaj aktywność"/>
+            Padding="12,0"
+            Command="{Binding AddActivityCommand}"
+            Content="Dodaj aktywność"/>
+
+                        <ComboBox Width="260" Height="32" Margin="10,0,0,0"
+              ItemsSource="{Binding ActivityHistory}"
+              SelectedItem="{Binding SelectedActivityFromHistory, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock>
+                    <Run Text="{Binding Name}"/>
+                    <Run Text=" ("/>
+                    <Run Text="{Binding Intensity}"/>
+                    <Run Text=", "/>
+                    <Run Text="{Binding BurnedCalories}"/>
+                    <Run Text=" kcal)"/>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <Button Height="32" Padding="12,0" Margin="10,0,0,0"
+            Command="{Binding AddActivityFromHistoryCommand}"
+            Content="Dodaj z historii"/>
                     </StackPanel>
 
                     <DataGrid Grid.Row="1"
@@ -291,6 +347,7 @@
                                 <Border Margin="8" Padding="10" BorderBrush="#DDD" BorderThickness="1" CornerRadius="6">
                                     <Grid>
                                         <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
                                             <RowDefinition Height="Auto"/>
@@ -312,15 +369,26 @@
                                                   ItemsSource="{Binding DataContext.Intensities, RelativeSource={RelativeSource AncestorType=DataGrid}}"
                                                   SelectedItem="{Binding Intensity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                        <TextBlock Grid.Row="1" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Czas (min):"/>
-                                        <TextBox Grid.Row="1" Grid.Column="1" Margin="0,8,0,0"
-                                                 Text="{Binding DurationMin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        <TextBlock Grid.Row="1" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Data/czas:"/>
+                                        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0,8,0,0" Orientation="Horizontal" Grid.ColumnSpan="4">
+                                            <TextBlock Width="90"
+                                                       VerticalAlignment="Center"
+                                                       Text="{Binding DateTime, Mode=OneWay, StringFormat={}{0:yyyy-MM-dd}}"/>
+                                            <TextBox Width="70" Margin="8,0,0,0"
+                                                     ToolTip="Format: HH:mm"
+                                                     Text="{Binding Time, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+                                        </StackPanel>
 
-                                        <TextBlock Grid.Row="1" Grid.Column="3" Margin="0,8,0,0" VerticalAlignment="Center" Text="Spalone:"/>
-                                        <TextBox Grid.Row="1" Grid.Column="4" Margin="0,8,0,0"
-                                                 Text="{Binding BurnedCalories, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                                        <StackPanel Grid.Row="2" Grid.ColumnSpan="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
+                                        <TextBlock Grid.Row="2" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Czas (min):"/>
+                                        <TextBox Grid.Row="2" Grid.Column="1" Margin="0,8,0,0"
+         Text="{Binding DurationMin, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                        <TextBlock Grid.Row="2" Grid.Column="3" Margin="0,8,0,0" VerticalAlignment="Center" Text="Spalone:"/>
+                                        <TextBox Grid.Row="2" Grid.Column="4" Margin="0,8,0,0"
+         Text="{Binding BurnedCalories, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+
+                                        <StackPanel Grid.Row="3" Grid.ColumnSpan="5" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,0,0">
                                             <Button Padding="10,4" Margin="0,0,8,0"
                                                     Click="SaveRow_Click"
                                                     Tag="{Binding RelativeSource={RelativeSource AncestorType=DataGrid}}">
@@ -339,6 +407,7 @@
 
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Nazwa" Binding="{Binding Name}" Width="*"/>
+                            <DataGridTextColumn Header="Data/czas" Binding="{Binding DateTime, StringFormat={}{0:yyyy-MM-dd HH:mm}}" Width="160"/>
                             <DataGridTextColumn Header="Czas (min)" Binding="{Binding DurationMin}" Width="90"/>
                             <DataGridTextColumn Header="Spalone" Binding="{Binding BurnedCalories}" Width="90"/>
                             <DataGridTextColumn Header="Intens." Binding="{Binding Intensity}" Width="100"/>
@@ -497,7 +566,7 @@
                             <TextBox Grid.Row="3" Grid.Column="1" Margin="0,8,0,0"
                          Text="{Binding SettingsDailyCaloriesGoal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <TextBlock Grid.Row="4" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Makro cele (g):"/>
+                            <TextBlock Grid.Row="4" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Makro cele (%):"/>
                             <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,8,0,0" Orientation="Horizontal">
                                 <TextBlock VerticalAlignment="Center" Text="B:" Margin="0,0,6,0"/>
                                 <TextBox Width="60" Text="{Binding SettingsProteinPercentGoal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
