@@ -13,7 +13,6 @@ public class MainViewModel : BaseViewModel
 {
     public User CurrentUser { get; set; }
 
-    // ComboBox-y
     public ObservableCollection<ActivityIntensity> Intensities { get; } =
         new(Enum.GetValues(typeof(ActivityIntensity)).Cast<ActivityIntensity>());
 
@@ -26,11 +25,9 @@ public class MainViewModel : BaseViewModel
     public ObservableCollection<ActivityLevel> ActivityLevels { get; } =
         new(Enum.GetValues(typeof(ActivityLevel)).Cast<ActivityLevel>());
 
-    // Dane Ÿród³owe (wszystkie rekordy)
     public ObservableCollection<Meal> Meals { get; } = new();
     public ObservableCollection<PhysicalActivity> Activities { get; } = new();
 
-    // Widoki filtrowane po dacie (pod DataGrid)
     public ICollectionView MealsView { get; }
     public ICollectionView ActivitiesView { get; }
 
@@ -73,7 +70,6 @@ public class MainViewModel : BaseViewModel
         set { _selectedActivity = value; OnPropertyChanged(); }
     }
 
-    // ===== HISTORIA (szablony) =====
     public ObservableCollection<Meal> MealHistory { get; } = new();
     public ObservableCollection<PhysicalActivity> ActivityHistory { get; } = new();
 
@@ -101,18 +97,14 @@ public class MainViewModel : BaseViewModel
         }
     }
 
-    // Liczniki liczone z widoków (czyli z wybranego dnia)
     public int CaloriesConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalCalories);
     public int CaloriesBurned => ActivitiesView.Cast<PhysicalActivity>().Sum(a => a.BurnedCalories);
     public int NetBalance => CaloriesConsumed - CaloriesBurned;
     public int CaloriesRemainingToGoal => Math.Max(0, CurrentUser.DailyCaloriesGoal - CaloriesConsumed);
 
-    // ===== MAKRO (dla wybranego dnia) =====
     public double ProteinConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalProtein);
     public double FatConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalFat);
     public double CarbsConsumed => MealsView.Cast<Meal>().Sum(m => m.TotalCarbs);
-
-    // Cele w gramach (prosto z User)
     public double ProteinGoalGrams => CurrentUser.ProteinGramsGoal;
     public double FatGoalGrams => CurrentUser.FatGramsGoal;
     public double CarbsGoalGrams => CurrentUser.CarbsGramsGoal;
@@ -128,7 +120,6 @@ public class MainViewModel : BaseViewModel
     public string GoalProgressText
         => $"{CaloriesConsumed} / {CurrentUser.DailyCaloriesGoal} kcal ({(CurrentUser.DailyCaloriesGoal == 0 ? 0 : (int)Math.Round(100.0 * CaloriesConsumed / CurrentUser.DailyCaloriesGoal))}%)";
 
-    // Komendy
     public RelayCommand AddMealCommand { get; }
     public RelayCommand AddActivityCommand { get; }
     public RelayCommand DeleteMealCommand { get; }
@@ -140,7 +131,6 @@ public class MainViewModel : BaseViewModel
     public RelayCommand ApplySettingsCommand { get; }
     public RelayCommand ResetSettingsCommand { get; }
 
-    // ===== USTAWIENIA (pola edycyjne) =====
     private string _settingsFirstName = "";
     public string SettingsFirstName
     {
@@ -190,7 +180,6 @@ public class MainViewModel : BaseViewModel
         set { _settingsDailyGoal = value; OnPropertyChanged(); }
     }
 
-    // Makro cele w gramach (zamiast %)
     private double _settingsProteinG;
     public double SettingsProteinGramsGoal
     {
@@ -212,7 +201,6 @@ public class MainViewModel : BaseViewModel
         set { _settingsCarbsG = value; OnPropertyChanged(); }
     }
 
-    // ===== STATYSTYKI =====
     public ObservableCollection<int> StatsRanges { get; } = new() { 7, 14, 30 };
 
     private int _selectedStatsRange = 7;
@@ -237,10 +225,9 @@ public class MainViewModel : BaseViewModel
 
     public MainViewModel()
     {
-        // UWAGA: konstruktor User musi przyjmowaæ gramy (albo ustaw je po konstruktorze)
         CurrentUser = new User(
             id: 1,
-            firstName: "Szymon",
+            firstName: "imie",
             age: 22,
             heightCm: 180,
             weightKg: 80,
@@ -526,7 +513,6 @@ public class MainViewModel : BaseViewModel
 
         SettingsDailyCaloriesGoal = CurrentUser.DailyCaloriesGoal;
 
-        // gramy
         SettingsProteinGramsGoal = CurrentUser.ProteinGramsGoal;
         SettingsFatGramsGoal = CurrentUser.FatGramsGoal;
         SettingsCarbsGramsGoal = CurrentUser.CarbsGramsGoal;

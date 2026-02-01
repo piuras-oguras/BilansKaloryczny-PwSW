@@ -17,8 +17,6 @@ public class DailyBalance
     public int CaloriesConsumed => Meals?.Sum(m => m.TotalCalories) ?? 0;
     public int CaloriesBurned => Activities?.Sum(a => a.BurnedCalories) ?? 0;
     public int NetBalance => CaloriesConsumed - CaloriesBurned;
-
-    // Makroskładniki (suma z posiłków dla danego dnia)
     public double TotalProtein => Meals?.Sum(m => m.TotalProtein) ?? 0;
     public double TotalFat => Meals?.Sum(m => m.TotalFat) ?? 0;
     public double TotalCarbs => Meals?.Sum(m => m.TotalCarbs) ?? 0;

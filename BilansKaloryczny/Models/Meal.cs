@@ -13,7 +13,6 @@ public class Meal
     public MealCategory Category { get; set; }
     public DateTime DateTime { get; set; } = System.DateTime.Now;
 
-    // Ułatwienie do UI: osobno data i czas (DatePicker + HH:mm)
     public DateTime Date
     {
         get => DateTime.Date;

@@ -15,7 +15,6 @@ public class User
 
     public int DailyCaloriesGoal { get; set; }
 
-    // CELE MAKRO W GRAMACH
     public double ProteinGramsGoal { get; set; }
     public double FatGramsGoal { get; set; }
     public double CarbsGramsGoal { get; set; }

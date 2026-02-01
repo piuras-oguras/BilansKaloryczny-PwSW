@@ -11,7 +11,6 @@ public class PhysicalActivity
 
     public DateTime DateTime { get; set; } = System.DateTime.Now;
 
-    // Ułatwienie do UI: osobno data i czas (DatePicker + HH:mm)
     public DateTime Date
     {
         get => DateTime.Date;

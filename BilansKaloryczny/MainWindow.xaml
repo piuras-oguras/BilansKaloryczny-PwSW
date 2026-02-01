@@ -12,7 +12,6 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Pasek górny -->
         <Border Padding="10" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1">
             <Grid>
                 <Grid.ColumnDefinitions>
@@ -47,10 +46,7 @@
             </Grid>
         </Border>
 
-        <!-- Zakładki -->
         <TabControl Grid.Row="1" Margin="0,12,0,0">
-
-            <!-- DASHBOARD -->
             <TabItem Header="Dashboard">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
@@ -115,7 +111,6 @@
                         </StackPanel>
                     </Border>
 
-                    <!-- MAKRO -->
                     <Border Grid.Row="2" Padding="10" CornerRadius="8" BorderBrush="#DDD" BorderThickness="1" Margin="0,0,0,12">
                         <StackPanel>
                             <TextBlock Opacity="0.75" Text="Makroskładniki (cel / wykonanie)"/>
@@ -207,7 +202,6 @@
                 </Grid>
             </TabItem>
 
-            <!-- POSIŁKI -->
             <TabItem Header="Posiłki">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
@@ -296,7 +290,6 @@
                                                      Text="{Binding Time, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
                                         </StackPanel>
 
-                                        <!-- Makro w gramach -->
                                         <TextBlock Grid.Row="2" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Makro (g):"/>
                                         <StackPanel Grid.Row="2" Grid.Column="1" Margin="0,8,0,0" Orientation="Horizontal" Grid.ColumnSpan="4">
                                             <TextBlock VerticalAlignment="Center" Text="B:" Margin="0,0,6,0"/>
@@ -359,7 +352,6 @@
                 </Grid>
             </TabItem>
 
-            <!-- AKTYWNOŚCI -->
             <TabItem Header="Aktywności">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
@@ -498,7 +490,6 @@
                 </Grid>
             </TabItem>
 
-            <!-- STATYSTYKI -->
             <TabItem Header="Statystyki">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
@@ -570,7 +561,6 @@
                 </Grid>
             </TabItem>
 
-            <!-- USTAWIENIA -->
             <TabItem Header="Ustawienia">
                 <Grid Margin="12">
                     <Grid.RowDefinitions>
@@ -630,7 +620,6 @@
                             <TextBox Grid.Row="3" Grid.Column="1" Margin="0,8,0,0"
                                      Text="{Binding SettingsDailyCaloriesGoal, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
 
-                            <!-- Makro cele w gramach -->
                             <TextBlock Grid.Row="4" Grid.Column="0" Margin="0,8,0,0" VerticalAlignment="Center" Text="Makro cele (g):"/>
                             <StackPanel Grid.Row="4" Grid.Column="1" Margin="0,8,0,0" Orientation="Horizontal">
                                 <TextBlock VerticalAlignment="Center" Text="B:" Margin="0,0,6,0"/>
